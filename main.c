@@ -14,6 +14,73 @@ enum operations {
     LOOP_END = 8
 };
 
+
+void pointer_increment(int *mem_pointer, int *instruction_pointer, char *memory) {
+    ++(*mem_pointer);
+    ++(*instruction_pointer);
+}
+
+void pointer_decrement(int *mem_pointer, int *instruction_pointer, char *memory) {
+    --(*mem_pointer);
+    ++(*instruction_pointer);
+}
+
+void memory_increment(int *mem_pointer, int *instruction_pointer, char *memory) {
+    ++memory[*mem_pointer];
+    ++(*instruction_pointer);
+}
+
+void memory_decrement(int *mem_pointer, int *instruction_pointer, char *memory) {
+    --memory[*mem_pointer];
+    ++(*instruction_pointer);
+}
+
+void print_mem(int *mem_pointer, int *instruction_pointer, char *memory) {
+    printf("%c", memory[*mem_pointer]);
+    ++(*instruction_pointer);
+}
+
+void set_mem(int *mem_pointer, int *instruction_pointer, char *memory) {
+    memory[*instruction_pointer] = getc(stdin);
+    ++(*instruction_pointer);
+}
+
+void loop_start(int *mem_pointer, int *instruction_pointer, char *memory) {
+    if(memory[*mem_pointer] == 0) {
+        int skip_loops = 1;
+        int operation = LOOP_START;
+        while(operation != LOOP_END || skip_loops != 0) {
+            ++(*instruction_pointer);
+            operation = memory[*instruction_pointer];
+            if(operation == LOOP_START) {
+               skip_loops++;
+            } else if (operation == LOOP_END && skip_loops > 0) {
+               skip_loops--;
+            }
+        }
+    } else {
+        ++(*instruction_pointer);
+    }
+}
+
+void loop_end(int *mem_pointer, int *instruction_pointer, char *memory) {
+    if(memory[*mem_pointer] != 0) {
+        int skip_loops = 1;
+        int operation = LOOP_END;
+        while(operation != LOOP_START || skip_loops != 0) {
+            --(*instruction_pointer);
+            operation = memory[*instruction_pointer];
+            if(operation == LOOP_END) {
+               skip_loops++;
+            } else if (operation == LOOP_START && skip_loops > 0) {
+               skip_loops--;
+            }
+        }
+    } else {
+        ++(*instruction_pointer);
+    }
+}
+
 int read_program(char *memory, char *filename) {
     int mem_pointer = 0;
 
@@ -56,71 +123,14 @@ int read_program(char *memory, char *filename) {
 }
 
 int execute_program(unsigned char *memory, int mem_pointer) {
+    void (*functions[])(int *, int *, char *) = {NULL, pointer_increment, pointer_decrement, memory_increment, memory_decrement, print_mem, set_mem, loop_start, loop_end};
     int mem_p = mem_pointer;
     int instruction_pointer = 0;
     unsigned char operation = memory[instruction_pointer];
-    int loop_depth = 0;
     while(operation != 0) {
         operation = memory[instruction_pointer];
         //printf("I: %d O: %d A: %d M: %d\n", instruction_pointer, operation, mem_p, memory[mem_pointer]);
-        switch(operation) {
-            case P_INC:
-                 ++mem_p;
-                 instruction_pointer++;
-                 break;
-             case P_DEC:
-                 --mem_p;
-                 instruction_pointer++;
-                 break;
-             case DEC:
-                 memory[mem_p]--;
-                 instruction_pointer++;
-                 break;
-             case INC:
-                 memory[mem_p]++;
-                 instruction_pointer++;
-                 break;
-             case PRINT:
-                 printf("%c", memory[mem_p]);
-                 instruction_pointer++;
-                 break;
-             case GETC:
-                 memory[mem_p] = getc(stdin);
-                 instruction_pointer++;
-                 break;
-             case LOOP_START:
-                 if(memory[mem_p] == 0) {
-                     int skip_loops = 1;
-                     while(operation != LOOP_END || skip_loops != 0) {
-                         instruction_pointer++;
-                         operation = memory[instruction_pointer];
-                         if(operation == LOOP_START) {
-                            skip_loops++;
-                         } else if (operation == LOOP_END && skip_loops > 0) {
-                            skip_loops--;
-                         }
-                     }
-                 } else {
-                     instruction_pointer++;
-                 }
-                 break;
-            case LOOP_END:
-                 if(memory[mem_p] != 0) {
-                     int skip_loops = 1;
-                     while(operation != LOOP_START || skip_loops != 0) {
-                         instruction_pointer--;
-                         operation = memory[instruction_pointer];
-                         if(operation == LOOP_END) {
-                            skip_loops++;
-                         } else if (operation == LOOP_START && skip_loops > 0) {
-                            skip_loops--;
-                         }
-                     }
-                 } else {
-                     instruction_pointer++;
-                 }
-                 break;
-          }
+        (*functions[operation])(&mem_p, &instruction_pointer, memory);
     }
 }
 
