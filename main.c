@@ -41,7 +41,7 @@ void print_mem(int *mem_pointer, int *instruction_pointer, char *memory) {
 }
 
 void set_mem(int *mem_pointer, int *instruction_pointer, char *memory) {
-    memory[*instruction_pointer] = getc(stdin);
+    memory[*mem_pointer] = getc(stdin);
     ++(*instruction_pointer);
 }
 
@@ -54,7 +54,7 @@ void loop_start(int *mem_pointer, int *instruction_pointer, char *memory) {
             operation = memory[*instruction_pointer];
             if(operation == LOOP_START) {
                skip_loops++;
-            } else if (operation == LOOP_END && skip_loops > 0) {
+            } else if (operation == LOOP_END && skip_loops < 0) {
                skip_loops--;
             }
         }
@@ -72,7 +72,7 @@ void loop_end(int *mem_pointer, int *instruction_pointer, char *memory) {
             operation = memory[*instruction_pointer];
             if(operation == LOOP_END) {
                skip_loops++;
-            } else if (operation == LOOP_START && skip_loops > 0) {
+            } else if (operation == LOOP_START && skip_loops < 0) {
                skip_loops--;
             }
         }
@@ -123,14 +123,40 @@ int read_program(char *memory, char *filename) {
 }
 
 int execute_program(unsigned char *memory, int mem_pointer) {
-    void (*functions[])(int *, int *, char *) = {NULL, pointer_increment, pointer_decrement, memory_increment, memory_decrement, print_mem, set_mem, loop_start, loop_end};
+    //void (*functions[])(int *, int *, char *) = {NULL, pointer_increment, pointer_decrement, memory_increment, memory_decrement, print_mem, set_mem, loop_start, loop_end};
     int mem_p = mem_pointer;
     int instruction_pointer = 0;
     unsigned char operation = memory[instruction_pointer];
     while(operation != 0) {
         operation = memory[instruction_pointer];
+	switch(operation) {
+	case P_INC:
+		pointer_increment(&mem_p, &instruction_pointer, memory);
+		break;
+	case P_DEC:
+		pointer_decrement(&mem_p, &instruction_pointer, memory);
+		break;
+	case INC:
+		memory_increment(&mem_p, &instruction_pointer, memory);
+		break;
+	case DEC:
+		memory_decrement(&mem_p, &instruction_pointer, memory);
+		break;
+	case PRINT:
+		print_mem(&mem_p, &instruction_pointer, memory);
+		break;
+	case GETC:
+		set_mem(&mem_p, &instruction_pointer, memory);
+		break;
+	case LOOP_START:
+		loop_start(&mem_p, &instruction_pointer, memory);
+		break;
+	case LOOP_END:
+		loop_end(&mem_p, &instruction_pointer, memory);
+		break;
+	}
         //printf("I: %d O: %d A: %d M: %d\n", instruction_pointer, operation, mem_p, memory[mem_pointer]);
-        (*functions[operation])(&mem_p, &instruction_pointer, memory);
+        //(*functions[operation])(&mem_p, &instruction_pointer, memory);
     }
 }
 
